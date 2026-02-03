@@ -1,0 +1,8 @@
+AGENT-local.md
+.DS_Store
+build/
+dist/
+*.uf2
+*.hex
+*.bin
+*.elf
