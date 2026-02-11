@@ -2,6 +2,11 @@
 
 Bootstrap-level TinyGo firmware skeleton for Helianthus eBUS experiments.
 
+## Scope and constraints
+- This repo is bootstrap-only at the moment.
+- No functional eBUS firmware logic is implemented in this milestone.
+- Added code should stay limited to docs, interfaces, and build scaffolding.
+
 ## Status
 No firmware behavior is implemented yet. This repository currently provides:
 - roadmap notes
@@ -20,6 +25,6 @@ No firmware behavior is implemented yet. This repository currently provides:
 - `firmware/hal`: hardware abstraction interfaces (UART/timing/pins) with no concrete drivers.
 - `ARCHITECTURE.md` and `CONVENTIONS.md`: high-level project constraints and coding standards.
 
-## Build/test (placeholder)
-- `go test ./...`
-- `tinygo build ./firmware` (if TinyGo is available locally)
+## Build/test scaffolding
+- `make test`
+- `make tinygo-build` (TinyGo optional; skips if unavailable)
