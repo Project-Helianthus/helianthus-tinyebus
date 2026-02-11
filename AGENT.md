@@ -10,3 +10,4 @@ unless explicitly requested.
 ## Notes
 - Docs live in `README.md`, `ARCHITECTURE.md`, and `CONVENTIONS.md`.
 - Local notes belong in `AGENT-local.md` (gitignored).
+- React (emoji) to every review comment and reply with status when actioned.
