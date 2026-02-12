@@ -1,4 +1,4 @@
-.PHONY: test tinygo-build ci
+.PHONY: test tinygo-build smoke-vr90 ci
 
 test:
 	GOWORK=off go test ./...
@@ -11,5 +11,8 @@ tinygo-build:
 	else \
 		echo "tinygo not installed; skipping tinygo build"; \
 	fi
+
+smoke-vr90:
+	./scripts/smoke-vr90-minimal.sh
 
 ci: test

@@ -7,7 +7,8 @@ This repo is a minimal TinyGo firmware skeleton.
   - `main.go` TinyGo entry package
   - `bus/` eBUS protocol stubs
   - `hal/` hardware abstraction stubs
+  - `emulation/` target-emulation framework and deterministic harness (VR90 minimal profile)
 - `.github/workflows/` CI placeholder
 
 ## Status
-No functional firmware yet; packages are empty by design.
+Repository is still intentionally minimal. `firmware/emulation` contains first functional behavior for deterministic target-emulation tests, while transport/HAL remain stubs.
