@@ -109,6 +109,8 @@ type Target struct {
 	Rules         []Rule
 }
 
+const maxMillis = ^uint32(0)
+
 func (t *Target) Emulate(event RequestEvent) (EmulatedResponse, error) {
 	if t == nil {
 		return EmulatedResponse{}, fmt.Errorf("missing target: %w", ErrInvalidConfiguration)
@@ -144,11 +146,20 @@ func (t *Target) Emulate(event RequestEvent) (EmulatedResponse, error) {
 		if err := timing.validate(plan.DelayMillis); err != nil {
 			return EmulatedResponse{}, err
 		}
+		if plan.DelayMillis > maxMillis-event.AtMillis {
+			return EmulatedResponse{}, fmt.Errorf(
+				"response timestamp overflow request=%dms delay=%dms: %w",
+				event.AtMillis,
+				plan.DelayMillis,
+				ErrTimingConstraint,
+			)
+		}
+		respondAtMillis := event.AtMillis + plan.DelayMillis
 
 		return EmulatedResponse{
 			Rule:              rule.Name,
 			RequestedAtMillis: event.AtMillis,
-			RespondAtMillis:   event.AtMillis + plan.DelayMillis,
+			RespondAtMillis:   respondAtMillis,
 			Frame: Frame{
 				Source:    t.Address,
 				Target:    event.Frame.Source,
