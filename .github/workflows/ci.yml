@@ -12,4 +12,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+      - name: Enforce terminology
+        run: |
+          if git grep -nIwiE 'm[a]ster|s[l]ave'; then
+            echo "Found legacy terminology in tracked files."
+            exit 1
+          fi
       - run: make ci
