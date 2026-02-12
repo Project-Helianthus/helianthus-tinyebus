@@ -62,6 +62,39 @@ func TestTargetEmulate_MirrorResponseFrame(t *testing.T) {
 	}
 }
 
+func TestTargetEmulate_RespondAtOverflow(t *testing.T) {
+	t.Parallel()
+
+	target := &Target{
+		Address: 0x15,
+		Rules: []Rule{
+			{
+				Name:    "identify",
+				Matcher: MatchPrimarySecondary(0x07, 0x04),
+				Builder: BuildFunc(func(Frame) (ResponsePlan, error) {
+					return ResponsePlan{
+						DelayMillis: 10,
+						Data:        []byte{0xB5},
+					}, nil
+				}),
+			},
+		},
+	}
+
+	_, err := target.Emulate(RequestEvent{
+		AtMillis: ^uint32(0) - 5,
+		Frame: Frame{
+			Source:    0x10,
+			Target:    0x15,
+			Primary:   0x07,
+			Secondary: 0x04,
+		},
+	})
+	if !errors.Is(err, ErrTimingConstraint) {
+		t.Fatalf("Emulate() error = %v; want %v", err, ErrTimingConstraint)
+	}
+}
+
 func TestTargetEmulate_Errors(t *testing.T) {
 	t.Parallel()
 

@@ -156,6 +156,48 @@ func TestHarnessRunSequence_Errors(t *testing.T) {
 	}
 }
 
+func TestHarnessHistory_DeepCopiesPayload(t *testing.T) {
+	t.Parallel()
+
+	target := &Target{
+		Address: 0x15,
+		Rules: []Rule{
+			{
+				Name:    "identify",
+				Matcher: MatchPrimarySecondary(0x07, 0x04),
+				Builder: BuildFunc(func(Frame) (ResponsePlan, error) {
+					return ResponsePlan{
+						DelayMillis: 8,
+						Data:        []byte{0xB5},
+					}, nil
+				}),
+			},
+		},
+	}
+
+	harness := NewHarness(target)
+	_, err := harness.Query(Frame{
+		Source:    0x10,
+		Target:    0x15,
+		Primary:   0x07,
+		Secondary: 0x04,
+	})
+	if err != nil {
+		t.Fatalf("Query() error = %v", err)
+	}
+
+	history := harness.History()
+	if len(history) != 1 {
+		t.Fatalf("len(history) = %d; want 1", len(history))
+	}
+	history[0].Frame.Data[0] = 0x00
+
+	freshHistory := harness.History()
+	if got := freshHistory[0].Frame.Data[0]; got != 0xB5 {
+		t.Fatalf("freshHistory[0].Frame.Data[0] = 0x%02x; want 0xb5", got)
+	}
+}
+
 func TestValidateResponseEnvelope(t *testing.T) {
 	t.Parallel()
 
@@ -191,5 +233,17 @@ func TestValidateResponseEnvelope(t *testing.T) {
 	})
 	if !errors.Is(err, ErrInvalidConfiguration) {
 		t.Fatalf("ValidateResponseEnvelope() error = %v; want %v", err, ErrInvalidConfiguration)
+	}
+
+	err = ValidateResponseEnvelope([]EmulatedResponse{
+		{
+			RequestedAtMillis: 10,
+			RespondAtMillis:   9,
+		},
+	}, ResponseEnvelope{
+		MinDelayMillis: 0,
+	})
+	if !errors.Is(err, ErrTimingConstraint) {
+		t.Fatalf("ValidateResponseEnvelope() error = %v; want %v", err, ErrTimingConstraint)
 	}
 }
