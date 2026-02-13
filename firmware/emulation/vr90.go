@@ -11,6 +11,13 @@ const (
 	DefaultVR90DeviceID     = "B7V00"
 	DefaultVR90Software     = uint16(0x0422)
 	DefaultVR90Hardware     = uint16(0x5503)
+	DefaultVR90ScanID       = "21231600202609140953035469N6"
+
+	vr90B509ScanIDSelectorStart = byte(0x24)
+	vr90B509ScanIDSelectorEnd   = byte(0x27)
+	vr90B509ScanIDChunkSize     = 8
+	vr90B509ScanIDChunkCount    = 4
+	vr90B509ScanIDLength        = vr90B509ScanIDChunkSize * vr90B509ScanIDChunkCount
 )
 
 var (
@@ -27,6 +34,8 @@ type VR90Profile struct {
 	DeviceID            string
 	Software            uint16
 	Hardware            uint16
+	EnableB509Discovery bool
+	ScanID              string
 	ResponseDelayMillis uint32
 	Timing              TimingConstraints
 }
@@ -38,6 +47,7 @@ func DefaultVR90Profile() VR90Profile {
 		DeviceID:            DefaultVR90DeviceID,
 		Software:            DefaultVR90Software,
 		Hardware:            DefaultVR90Hardware,
+		ScanID:              DefaultVR90ScanID,
 		ResponseDelayMillis: defaultVR90ResponseDelayMillis,
 		Timing:              defaultVR90Timing,
 	}
@@ -48,7 +58,7 @@ func NewVR90Target(profile VR90Profile) (*Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewIdentifyOnlyTarget(IdentifyOnlyProfile{
+	target, err := NewIdentifyOnlyTarget(IdentifyOnlyProfile{
 		Name:                fmt.Sprintf("vr90-minimal-0x%02x", normalized.Address),
 		Address:             normalized.Address,
 		Manufacturer:        normalized.Manufacturer,
@@ -58,9 +68,42 @@ func NewVR90Target(profile VR90Profile) (*Target, error) {
 		ResponseDelayMillis: normalized.ResponseDelayMillis,
 		Timing:              normalized.Timing,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if !normalized.EnableB509Discovery {
+		return target, nil
+	}
+
+	scanID := normalized.ScanID
+	target.Rules = append(target.Rules, Rule{
+		Name: "vaillant-b509-scanid",
+		Matcher: MatchFunc(func(frame Frame) bool {
+			return frame.Primary == 0xB5 &&
+				frame.Secondary == 0x09 &&
+				len(frame.Data) == 1 &&
+				isVR90B509ScanIDSelector(frame.Data[0])
+		}),
+		Builder: BuildFunc(func(frame Frame) (ResponsePlan, error) {
+			chunk, ok := vr90B509ScanIDChunk(scanID, frame.Data[0])
+			if !ok {
+				return ResponsePlan{}, fmt.Errorf("vr90 unsupported b509 selector 0x%02x: %w", frame.Data[0], ErrNoMatchingRule)
+			}
+			return ResponsePlan{
+				DelayMillis: normalized.ResponseDelayMillis,
+				Data:        chunk,
+			}, nil
+		}),
+	})
+	return target, nil
 }
 
 func normalizeVR90Profile(profile VR90Profile) (VR90Profile, error) {
+	hasIdentityOverrides := profile.Manufacturer != 0 ||
+		strings.TrimSpace(profile.DeviceID) != "" ||
+		profile.Software != 0 ||
+		profile.Hardware != 0
+
 	if profile.Address == 0 {
 		profile.Address = DefaultVR90Address
 	}
@@ -70,10 +113,8 @@ func normalizeVR90Profile(profile VR90Profile) (VR90Profile, error) {
 	if strings.TrimSpace(profile.DeviceID) == "" {
 		profile.DeviceID = DefaultVR90DeviceID
 	}
-	if profile.Software == 0 {
+	if !hasIdentityOverrides {
 		profile.Software = DefaultVR90Software
-	}
-	if profile.Hardware == 0 {
 		profile.Hardware = DefaultVR90Hardware
 	}
 	if profile.ResponseDelayMillis == 0 {
@@ -82,18 +123,53 @@ func normalizeVR90Profile(profile VR90Profile) (VR90Profile, error) {
 	if !profile.Timing.active() {
 		profile.Timing = defaultVR90Timing
 	}
+	profile.ScanID = normalizeVR90ScanID(profile.ScanID)
 	if err := profile.Timing.validate(profile.ResponseDelayMillis); err != nil {
 		return VR90Profile{}, err
 	}
 
-	trimmedID := strings.TrimSpace(profile.DeviceID)
-	if trimmedID == "" {
+	trimmed := strings.TrimSpace(profile.DeviceID)
+	if trimmed == "" {
 		return VR90Profile{}, fmt.Errorf("vr90 profile empty device id: %w", ErrInvalidConfiguration)
 	}
-	if len(trimmedID) > identifyOnlyDeviceIDLength {
-		trimmedID = trimmedID[:identifyOnlyDeviceIDLength]
+	if len(trimmed) > identifyOnlyDeviceIDLength {
+		trimmed = trimmed[:identifyOnlyDeviceIDLength]
 	}
-	profile.DeviceID = trimmedID
-
+	profile.DeviceID = trimmed
 	return profile, nil
+}
+
+func normalizeVR90ScanID(scanID string) string {
+	trimmed := strings.TrimSpace(scanID)
+	if trimmed == "" {
+		trimmed = DefaultVR90ScanID
+	}
+	if len(trimmed) > vr90B509ScanIDLength {
+		trimmed = trimmed[:vr90B509ScanIDLength]
+	}
+	if len(trimmed) == vr90B509ScanIDLength {
+		return trimmed
+	}
+	padded := make([]byte, vr90B509ScanIDLength)
+	copy(padded, trimmed)
+	for idx := len(trimmed); idx < len(padded); idx++ {
+		padded[idx] = ' '
+	}
+	return string(padded)
+}
+
+func isVR90B509ScanIDSelector(selector byte) bool {
+	return selector >= vr90B509ScanIDSelectorStart && selector <= vr90B509ScanIDSelectorEnd
+}
+
+func vr90B509ScanIDChunk(scanID string, selector byte) ([]byte, bool) {
+	if !isVR90B509ScanIDSelector(selector) {
+		return nil, false
+	}
+	normalized := normalizeVR90ScanID(scanID)
+	offset := int(selector-vr90B509ScanIDSelectorStart) * vr90B509ScanIDChunkSize
+	chunk := make([]byte, 1, 1+vr90B509ScanIDChunkSize)
+	chunk[0] = 0x00
+	chunk = append(chunk, normalized[offset:offset+vr90B509ScanIDChunkSize]...)
+	return chunk, true
 }
