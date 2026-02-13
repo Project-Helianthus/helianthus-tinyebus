@@ -4,7 +4,7 @@ Bootstrap-level TinyGo firmware skeleton for Helianthus eBUS experiments.
 
 ## Scope and constraints
 - This repo stays firmware-focused and avoids host-side transport dependencies.
-- Functional scope in this milestone is intentionally narrow: target emulation framework + VR90 minimal recognition.
+- Functional scope in this milestone is intentionally narrow: target emulation framework + identify-only presets (VR90, VR_71).
 - Broader protocol stack work (full bus state machine, additional devices) remains out of scope.
 
 ## Status
@@ -13,7 +13,7 @@ This repository currently provides:
 - placeholder interfaces for future bus/HAL wiring
 - generic target-emulation framework (request matcher + response builder + timing constraints)
 - deterministic virtual-time harness for unit/integration tests
-- minimal VR90 target emulator behavior for `07 04` identify recognition
+- generic identify-only target profile API (`07 04`) with VR90 and VR_71 presets
 
 ## Short roadmap
 - **M1 (issue #1):** Document roadmap and define package contracts only.
@@ -26,7 +26,7 @@ This repository currently provides:
 - `firmware/main.go`: TinyGo entry package and future bootstrapping point.
 - `firmware/bus`: eBUS-facing interfaces/contracts (no protocol logic yet).
 - `firmware/hal`: hardware abstraction interfaces (UART/timing/pins) with no concrete drivers.
-- `firmware/emulation`: target-emulation framework, deterministic harness, and VR90 minimal target profile.
+- `firmware/emulation`: target-emulation framework, deterministic harness, and identify-only target profiles/presets.
 - `ARCHITECTURE.md` and `CONVENTIONS.md`: high-level project constraints and coding standards.
 
 ## Target emulation timing constraints
@@ -36,4 +36,6 @@ This repository currently provides:
 ## Build/test
 - `make test`
 - `make tinygo-build` (TinyGo optional; skips if unavailable)
-- `./scripts/smoke-vr90-minimal.sh`
+- `./scripts/smoke-vr90-minimal.sh vr90`
+- `./scripts/smoke-vr90-minimal.sh vr71`
+- `./scripts/smoke-vr90-minimal.sh all`
