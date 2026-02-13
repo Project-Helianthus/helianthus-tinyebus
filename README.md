@@ -3,7 +3,7 @@
 TinyGo firmware skeleton for Helianthus eBUS experiments.
 
 ## Current status
-- Firmware scope stays intentionally narrow: deterministic target emulation + identify-only presets (`VR90`, `VR_71`).
+- Firmware scope stays intentionally narrow: deterministic target emulation + profile-driven VR90 mapped commands + identify-only presets (`VR90`, `VR_71`).
 - `firmware/bus` and `firmware/hal` are contracts only (no runtime protocol engine, no board drivers).
 - `firmware/emulation` is the only functional subsystem and is covered by Go tests + smoke scripts.
 
@@ -47,14 +47,16 @@ TinyGo firmware skeleton for Helianthus eBUS experiments.
 | `firmware/emulation/identify_only.go` | Generic identify-only target profile (`07 04`) | Functional with presets and tests. |
 | `firmware/emulation/vr90.go` | VR90 convenience profile wrapper | Functional (`NewVR90Target`, defaults, tests). |
 | `firmware/emulation/harness.go` | Deterministic virtual-time query harness | Functional and unit-tested. |
-| `scripts/smoke-vr90-minimal.sh` | Smoke test runner for profile-specific identify checks | Functional (`vr90`, `vr71`, `all`). |
+| `scripts/smoke-vr90-minimal.sh` | Smoke test runner for profile-specific identify/B509/mapped checks | Functional (`vr90`, `vr71`, `all`). |
 
 ## Emulation status
-| Profile | Address | Identify (`PB=0x07`, `SB=0x04`) | Status | Smoke coverage |
+| Profile | Address | Command surface | Status | Smoke coverage |
 | --- | --- | --- | --- | --- |
-| `VR90` | `0x15` | ✅ implemented | Identify-only | `TestSmokeVR90MinimalQuerySet` |
-| `VR_71` | `0x26` | ✅ implemented | Identify-only | `TestSmokeVR71IdentifyOnlyProfile` |
-| Other commands | N/A | ❌ not implemented | Returns `ErrNoMatchingRule` | Covered by negative tests |
+| `VR90` | `0x15` | Identify (`PB=0x07`, `SB=0x04`) | ✅ implemented | `TestSmokeVR90MinimalQuerySet` |
+| `VR90` | `0x15` | B509 ScanID discovery (`PB=0xB5`, `SB=0x09`) | ✅ implemented (optional flag) | `TestSmokeVR90B509DiscoveryQuerySet` |
+| `VR90` | `0x15` | Profile-mapped commands (`MappedCommands`) | ✅ implemented (optional entries) | `TestSmokeVR90MappedCommandQuerySet` |
+| `VR_71` | `0x26` | Identify (`PB=0x07`, `SB=0x04`) | ✅ implemented | `TestSmokeVR71IdentifyOnlyProfile` |
+| Unknown commands | N/A | Any unmatched query | ❌ no rule | Returns `ErrNoMatchingRule` (negative tests) |
 
 ## Smoke validation commands
 - `./scripts/smoke-vr90-minimal.sh vr90`
