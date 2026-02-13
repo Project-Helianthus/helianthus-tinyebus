@@ -9,13 +9,13 @@ shift || true
 
 case "$profile" in
   vr90)
-    test_pattern='^TestSmokeVR90(MinimalQuerySet|B509DiscoveryQuerySet)$'
+    test_pattern='^TestSmokeVR90(MinimalQuerySet|B509DiscoveryQuerySet|MappedCommandQuerySet)$'
     ;;
   vr71|vr_71)
     test_pattern='^TestSmokeVR71IdentifyOnlyProfile$'
     ;;
   all)
-    test_pattern='^TestSmoke(VR90MinimalQuerySet|VR90B509DiscoveryQuerySet|VR71IdentifyOnlyProfile)$'
+    test_pattern='^TestSmoke(VR90MinimalQuerySet|VR90B509DiscoveryQuerySet|VR90MappedCommandQuerySet|VR71IdentifyOnlyProfile)$'
     ;;
   *)
     echo "unknown profile '$profile' (use: vr90 | vr71 | all)" >&2
