@@ -1,80 +1,129 @@
 # helianthus-tinyebus
 
-TinyGo firmware skeleton for Helianthus eBUS experiments.
+`helianthus-tinyebus` is the TinyGo firmware bootstrap repository for Helianthus eBUS experiments. Today it is intentionally minimal: contracts in `firmware/bus` and `firmware/hal`, plus functional deterministic target emulation in `firmware/emulation`.
 
-## Current status
-- Firmware scope stays intentionally narrow: deterministic target emulation + profile-driven VR90 mapped commands + identify-only presets (`VR90`, `VR_71`).
-- `firmware/bus` and `firmware/hal` are contracts only (no runtime protocol engine, no board drivers).
-- `firmware/emulation` is the only functional subsystem and is covered by Go tests + smoke scripts.
+## Purpose and Scope
 
-## Prerequisites
-- Go `1.22+` (module baseline in `go.mod`).
-- `make` and `bash`.
-- TinyGo (optional for now, required for `make tinygo-build` and future board flashing).
+### What belongs in this repository
 
-## Toolchain setup
-1. Install Go `1.22+`.
-2. Install TinyGo from https://tinygo.org/getting-started/ (optional but recommended).
-3. Verify toolchain:
-   - `go version`
-   - `tinygo version` (if installed)
-   - `make --version`
+- TinyGo firmware entrypoint and package layout (`firmware/`).
+- eBUS and HAL contract surfaces (`firmware/bus`, `firmware/hal`).
+- Deterministic emulation framework/profiles/harness (`firmware/emulation`).
+- Lightweight smoke/test scripts (`scripts/`).
 
-## Build + flash workflow
-1. Run unit tests:
-   - `make test`
-2. Run TinyGo compile check (placeholder artifact):
-   - `make tinygo-build`
-   - Current behavior compiles `./firmware` to a temporary `wasm` output and deletes it.
-3. Flash workflow status:
-   - Board-specific flashing is **not wired yet** (no concrete HAL implementation and `firmware/main.go` is bootstrap-only).
-   - For future board targets, flash shape will be:
-     - `tinygo flash -target <tinygo-target> ./firmware`
+### What does not belong in this repository
 
-### Supported target status
-| Target | Build status | Flash status | Notes |
-| --- | --- | --- | --- |
-| `wasm` | ✅ via `make tinygo-build` | N/A | Placeholder compile check used for TinyGo availability. |
-| Hardware TinyGo targets | 🚧 pending | 🚧 pending | No board adapter/entry wiring yet. |
+- Production gateway/API runtime (`helianthus-ebusgateway`).
+- Registry/provider/schema logic (`helianthus-ebusreg`).
+- Home Assistant integration/add-on packaging (`helianthus-ha-integration`, `helianthus-ha-addon`).
 
-## Firmware module map
-| Module | Responsibility | Status |
-| --- | --- | --- |
-| `firmware/main.go` | TinyGo entrypoint | Bootstrap placeholder (`main()` intentionally empty). |
-| `firmware/bus` | eBUS transport/engine contracts | Interface-only; no protocol logic yet. |
-| `firmware/hal` | UART/clock/board abstraction contracts | Interface-only; no board drivers yet. |
-| `firmware/emulation/framework.go` | Rule matcher + response builder + timing constraints | Functional and unit-tested. |
-| `firmware/emulation/identify_only.go` | Generic identify-only target profile (`07 04`) | Functional with presets and tests. |
-| `firmware/emulation/vr90.go` | VR90 convenience profile wrapper | Functional (`NewVR90Target`, defaults, tests). |
-| `firmware/emulation/harness.go` | Deterministic virtual-time query harness | Functional and unit-tested. |
-| `scripts/smoke-vr90-minimal.sh` | Smoke test runner for profile-specific identify/B509/mapped checks | Functional (`vr90`, `vr71`, `all`). |
+## Status and Maturity
 
-## Emulation status
-| Profile | Address | Command surface | Status | Smoke coverage |
-| --- | --- | --- | --- | --- |
-| `VR90` | `0x15` | Identify (`PB=0x07`, `SB=0x04`) | ✅ implemented | `TestSmokeVR90MinimalQuerySet` |
-| `VR90` | `0x15` | B509 ScanID discovery (`PB=0xB5`, `SB=0x09`) | ✅ implemented (optional flag) | `TestSmokeVR90B509DiscoveryQuerySet` |
-| `VR90` | `0x15` | Profile-mapped commands (`MappedCommands`) | ✅ implemented (optional entries) | `TestSmokeVR90MappedCommandQuerySet` |
-| `VR_71` | `0x26` | Identify (`PB=0x07`, `SB=0x04`) | ✅ implemented | `TestSmokeVR71IdentifyOnlyProfile` |
-| Unknown commands | N/A | Any unmatched query | ❌ no rule | Returns `ErrNoMatchingRule` (negative tests) |
+- Bootstrap repository with actionable tests and smoke checks.
+- Functional scope is emulation-first (VR90/VR_71 identify and VR90 mapped-command/discovery paths).
+- Firmware runtime/board driver wiring is not implemented yet.
 
-## Smoke validation commands
-- `./scripts/smoke-vr90-minimal.sh vr90`
-- `./scripts/smoke-vr90-minimal.sh vr71`
-- `./scripts/smoke-vr90-minimal.sh all`
-- `make smoke-vr90` (defaults to `vr90`)
+## Helianthus Dependency Chain
 
-Expected result for successful runs:
-- the selected `TestSmoke...` test(s) run
-- output ends with `PASS` and `ok github.com/d3vi1/helianthus-tinyebus/firmware/emulation ...`
+```text
+helianthus-tinyebus (firmware bootstrap/emulation) -> helianthus-ebusgateway -> helianthus-ha-integration
+```
 
-## Timing note
-- Precise eBUS emulation timing belongs on firmware/MCU-side execution where jitter is predictable.
-- Host-side relays (for example `ebusd-tcp`) are useful for functional checks but not cycle-accurate timing validation.
+## Quickstart (copy/paste)
 
-## Concise roadmap
-- ✅ **M1 / issue #1:** package contracts + initial docs.
-- ✅ **M2 / issue #8:** target-emulation framework + identify-only profile path.
-- 🔜 **M3:** wire bootstrap path between `hal` and `bus`.
-- 🔜 **M4:** add eBUS framing + transaction state placeholders.
-- 🔜 **M5:** add board-specific HAL adapters and real TinyGo target flashing validation.
+### 0) Prerequisites
+
+- Go `1.22+`
+- `make`, `bash`
+- TinyGo (optional; only required for `make tinygo-build`)
+
+### 1) Clone and baseline checks
+
+```bash
+git clone https://github.com/d3vi1/helianthus-tinyebus.git
+cd helianthus-tinyebus
+make test
+go test ./...
+go vet ./...
+```
+
+### 2) TinyGo compile check (optional but recommended)
+
+```bash
+make tinygo-build
+```
+
+Behavior:
+- if TinyGo is installed: builds `./firmware` with `-target wasm` as placeholder compile verification.
+- if TinyGo is missing: prints `tinygo not installed; skipping tinygo build`.
+
+### 3) Smoke tests
+
+```bash
+./scripts/smoke-vr90-minimal.sh vr90
+./scripts/smoke-vr90-minimal.sh vr71
+./scripts/smoke-vr90-minimal.sh all
+```
+
+## Local Smoke-Test Configuration Examples
+
+### VR90 identify + B509 discovery + mapped command profile
+
+```go
+profile := emulation.DefaultVR90Profile()
+profile.EnableB509Discovery = true
+profile.MappedCommands = []emulation.VR90MappedCommand{
+	{
+		Name:         "read-temp",
+		Primary:      0xB5,
+		Secondary:    0x09,
+		PayloadExact: []byte{0x24},
+		ResponseData: []byte{0x00, 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'},
+	},
+}
+target, err := emulation.NewVR90Target(profile)
+_ = target
+_ = err
+```
+
+### Identify-only preset profiles
+
+```go
+vr90, _ := emulation.NewIdentifyOnlyTarget(emulation.PresetVR90IdentifyOnlyProfile())
+vr71, _ := emulation.NewIdentifyOnlyTarget(emulation.PresetVR71IdentifyOnlyProfile())
+_, _ = vr90, vr71
+```
+
+## Validation Commands
+
+| Area | Command |
+|---|---|
+| formatting | `find . -name '*.go' -type f -print0 \| xargs -0 gofmt -w` |
+| tests | `go test ./...` |
+| vet | `go vet ./...` |
+| make CI shortcut | `make ci` |
+| tinygo compile check | `make tinygo-build` |
+| smoke VR90 | `./scripts/smoke-vr90-minimal.sh vr90` |
+| smoke VR_71 | `./scripts/smoke-vr90-minimal.sh vr71` |
+| smoke all profiles | `./scripts/smoke-vr90-minimal.sh all` |
+| terminology gate (CI parity) | `if git grep -nIwiE 'm[a]ster|s[l]ave'; then echo "Found legacy terminology in tracked files."; exit 1; fi` |
+
+## Link Map
+
+### Local docs in this repo
+
+- `ARCHITECTURE.md`
+- `CONVENTIONS.md`
+- `AGENT.md`
+
+### Related Helianthus repos/docs
+
+- eBUS gateway runtime: https://github.com/d3vi1/helianthus-ebusgateway
+- eBUS registry/provider layer: https://github.com/d3vi1/helianthus-ebusreg
+- eBUS protocol docs: https://github.com/d3vi1/helianthus-docs-ebus
+
+### Issue workflow conventions
+
+- Use one issue-focused branch per change (example: `issue-21-readme-refresh`).
+- Keep PR scope aligned to issue acceptance criteria.
+- Include closing keyword in PR body (example: `Fixes #21`).
