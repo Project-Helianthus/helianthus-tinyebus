@@ -1,3 +1,3 @@
-module github.com/d3vi1/helianthus-tinyebus
+module github.com/Project-Helianthus/helianthus-tinyebus
 
 go 1.22

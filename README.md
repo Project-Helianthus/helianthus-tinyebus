@@ -40,7 +40,7 @@ helianthus-tinyebus (firmware bootstrap/emulation) -> helianthus-ebusgateway -> 
 ### 1) Clone and baseline checks
 
 ```bash
-git clone https://github.com/d3vi1/helianthus-tinyebus.git
+git clone https://github.com/Project-Helianthus/helianthus-tinyebus.git
 cd helianthus-tinyebus
 make test
 go test ./...
@@ -118,9 +118,9 @@ _, _ = vr90, vr71
 
 ### Related Helianthus repos/docs
 
-- eBUS gateway runtime: https://github.com/d3vi1/helianthus-ebusgateway
-- eBUS registry/provider layer: https://github.com/d3vi1/helianthus-ebusreg
-- eBUS protocol docs: https://github.com/d3vi1/helianthus-docs-ebus
+- eBUS gateway runtime: https://github.com/Project-Helianthus/helianthus-ebusgateway
+- eBUS registry/provider layer: https://github.com/Project-Helianthus/helianthus-ebusreg
+- eBUS protocol docs: https://github.com/Project-Helianthus/helianthus-docs-ebus
 
 ### Issue workflow conventions
 
