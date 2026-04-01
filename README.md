@@ -1,6 +1,8 @@
 # helianthus-tinyebus
 
-`helianthus-tinyebus` is the TinyGo firmware bootstrap repository for Helianthus eBUS experiments. Today it is intentionally minimal: contracts in `firmware/bus` and `firmware/hal`, plus functional deterministic target emulation in `firmware/emulation`.
+`helianthus-tinyebus` is the off-PIC oracle, harness, and bridge repository for the Helianthus eBUS adapter northbound contract. It is intended to run on an ESP8266 D1 mini with 4 MB flash, not on the PIC.
+
+The PIC firmware lives in the separate `helianthus-ebus-adapter-pic` workspace. This repository keeps the contract surface deterministic and testable from the host side.
 
 ## Purpose and Scope
 
@@ -9,24 +11,28 @@
 - TinyGo firmware entrypoint and package layout (`firmware/`).
 - eBUS and HAL contract surfaces (`firmware/bus`, `firmware/hal`).
 - Deterministic emulation framework/profiles/harness (`firmware/emulation`).
+- Adapter oracle package and CLI for ENH, ENS, adapter INFO, deterministic runtime-contract parity checks, and scan/status/state report samples (`firmware/adapterproto`, `cmd/adapterproto-oracle`).
 - Lightweight smoke/test scripts (`scripts/`).
 
 ### What does not belong in this repository
 
 - Production gateway/API runtime (`helianthus-ebusgateway`).
+- PIC runtime or bootloader firmware.
 - Registry/provider/schema logic (`helianthus-ebusreg`).
 - Home Assistant integration/add-on packaging (`helianthus-ha-integration`, `helianthus-ha-addon`).
 
 ## Status and Maturity
 
 - Bootstrap repository with actionable tests and smoke checks.
+- Adapter contract oracle is implemented in `firmware/adapterproto` and can be emitted with `go run ./cmd/adapterproto-oracle`.
+- The oracle now includes a small runtime-contract model for INIT, START, SEND, and cancel/no-response samples, plus a deterministic scan/status/state oracle derived from the decompiled PIC control flow.
 - Functional scope is emulation-first (VR90/VR_71 identify and VR90 mapped-command/discovery paths).
-- Firmware runtime/board driver wiring is not implemented yet.
+- Firmware runtime/board driver wiring for the PIC is not implemented here.
 
 ## Helianthus Dependency Chain
 
 ```text
-helianthus-tinyebus (firmware bootstrap/emulation) -> helianthus-ebusgateway -> helianthus-ha-integration
+helianthus-tinyebus (oracle/harness/spec on ESP8266 D1 mini) -> helianthus-ebusgateway -> helianthus-ha-integration
 ```
 
 ## Quickstart (copy/paste)
@@ -56,6 +62,14 @@ make tinygo-build
 Behavior:
 - if TinyGo is installed: builds `./firmware` with `-target wasm` as placeholder compile verification.
 - if TinyGo is missing: prints `tinygo not installed; skipping tinygo build`.
+
+### 2b) Adapter oracle JSON
+
+```bash
+go run ./cmd/adapterproto-oracle
+```
+
+This prints deterministic JSON for parity checks against the C-side contract implementation, including runtime-contract samples for INIT, START, SEND, and cancel flows, INFO coverage samples for all adapter INFO IDs, and scan/status/state snapshots derived from the decompiled firmware model.
 
 ### 3) Smoke tests
 
