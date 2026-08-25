@@ -68,12 +68,12 @@ func (model *RuntimeContractModel) Init(features byte) RuntimeExchangeSample {
 	}
 }
 
-func (model *RuntimeContractModel) Start(master byte) RuntimeExchangeSample {
+func (model *RuntimeContractModel) Start(initiator byte) RuntimeExchangeSample {
 	before := model.Snapshot()
-	requestHex := encodeRuntimeRequest(ENHReqStart, master)
-	request := runtimeENHFrameSample(ENHReqStart, "start", master, len(requestHex))
+	requestHex := encodeRuntimeRequest(ENHReqStart, initiator)
+	request := runtimeENHFrameSample(ENHReqStart, "start", initiator, len(requestHex))
 
-	if master == 0xAA {
+	if initiator == 0xAA {
 		model.session = RuntimeSessionSnapshot{}
 		return RuntimeExchangeSample{
 			RequestHex:  hexStrings(requestHex),
@@ -88,10 +88,10 @@ func (model *RuntimeContractModel) Start(master byte) RuntimeExchangeSample {
 
 	model.session = RuntimeSessionSnapshot{
 		Active:    true,
-		Initiator: master,
+		Initiator: initiator,
 	}
-	responseHex := EncodeENHStream(ENHResStarted, master)
-	response := runtimeENHFrameSample(ENHResStarted, "started", master, len(responseHex))
+	responseHex := EncodeENHStream(ENHResStarted, initiator)
+	response := runtimeENHFrameSample(ENHResStarted, "started", initiator, len(responseHex))
 
 	return RuntimeExchangeSample{
 		RequestHex:  hexStrings(requestHex),
