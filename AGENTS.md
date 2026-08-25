@@ -27,7 +27,11 @@ security fixes with a concrete issue and acceptance criteria.
 Run the checks applicable to the changed files:
 
 - Go behavior: `go test ./...` and `go vet ./...`.
-- Archived firmware compile check when firmware code changes: `make tinygo-build`.
+- Archived firmware compile evidence when firmware code changes: install TinyGo,
+  run `tinygo build -o /tmp/tinyebus-firmware.hex -target=pico firmware/adapterproto`,
+  and require a successful native build. `make tinygo-build` may be used as a
+  local convenience check, but its successful "tinygo not installed; skipping"
+  result is not compile evidence and does not satisfy this gate.
 - Oracle or profile changes: `go run ./cmd/adapterproto-oracle` and the affected `./scripts/smoke-vr90-minimal.sh` profile.
 - Documentation-only changes: Markdown/link validation and `git diff --check`.
 
