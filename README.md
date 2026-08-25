@@ -1,6 +1,6 @@
-# helianthus-tinyebus
+# **DEPRECATED** — helianthus-tinyebus
 
-> **Deprecated — historical/reference material only.** This repository is retained as an archival oracle, harness, and contract reference. It is not under active development.
+> **DEPRECATED — historical/reference material only.** This repository is retained as an archival oracle, harness, and contract reference. It is not under active development.
 
 `helianthus-tinyebus` is the historical off-PIC oracle, harness, and bridge repository for the Helianthus eBUS adapter northbound contract. Its material describes an ESP8266 D1 mini with 4 MB flash, rather than the PIC.
 
@@ -130,7 +130,7 @@ _, _ = vr90, vr71
 
 - `ARCHITECTURE.md`
 - `CONVENTIONS.md`
-- `AGENT.md`
+- `AGENTS.md`
 
 ### Related Helianthus repos/docs
 
