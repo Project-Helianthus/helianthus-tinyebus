@@ -28,7 +28,7 @@ Run the checks applicable to the changed files:
 
 - Go behavior: `go test ./...` and `go vet ./...`.
 - Archived firmware compile evidence when firmware code changes: install TinyGo,
-  run `tinygo build -o /tmp/tinyebus-firmware.hex -target=pico firmware/adapterproto`,
+  run `GOWORK=off tinygo build -o /tmp/tinyebus-firmware.hex -target=pico ./firmware`,
   and require a successful native build. `make tinygo-build` may be used as a
   local convenience check, but its successful "tinygo not installed; skipping"
   result is not compile evidence and does not satisfy this gate.
